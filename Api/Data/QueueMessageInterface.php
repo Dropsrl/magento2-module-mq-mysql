@@ -5,18 +5,21 @@ namespace Rcason\MqMysql\Api\Data;
 interface QueueMessageInterface
 {
     const STATUS_TO_PROCESS = 0;
-    const STATUS_MAX_RETRIES_EXCEEDED = 1;
+    const STATUS_DONE = 1;
+    const STATUS_ERROR = 2;
     
     /**#@+
      * Constants for keys of data array. Identical to the name of the getter in snake case.
      */
     
     const ENTITY_ID = 'entity_id';
+    const NAME = 'name';
     const CREATED_AT = 'created_at';
     const UPDATED_AT = 'updated_at';
     const STATUS = 'status';
     const RETRIES = 'retries';
     const QUEUE_NAME = 'queue_name';
+    const RESULT = 'result';
     const MESSAGE_BODY = 'message_body';
     
     /**
@@ -123,4 +126,19 @@ interface QueueMessageInterface
      * @return $this
      */
     public function setMessageBody($messageBody);
+    
+    /**
+     * Gets the message result.
+     *
+     * @return string
+     */
+    public function getResult();
+    
+    /**
+     * Sets the message result.
+     *
+     * @param string $result
+     * @return $this
+     */
+    public function setResult($result);
 }

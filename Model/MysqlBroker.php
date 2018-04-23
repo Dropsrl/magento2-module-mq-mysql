@@ -30,6 +30,8 @@ class MysqlBroker implements \Rcason\Mq\Api\BrokerInterface
      */
     protected $queueName;
     
+    protected $logger;
+    
     /**
      * @param QueueMessageInterfaceFactory $queueMessageFactory
      * @param MessageEnvelopeInterfaceFactory $messageEnvelopeFactory
@@ -39,12 +41,14 @@ class MysqlBroker implements \Rcason\Mq\Api\BrokerInterface
         QueueMessageInterfaceFactory $queueMessageFactory,
         MessageEnvelopeInterfaceFactory $messageEnvelopeFactory,
         QueueMessageRepositoryInterface $queueMessageRepository,
+        \Psr\Log\LoggerInterface $logger,
         $queueName = null
     ) {
         $this->queueMessageFactory = $queueMessageFactory;
         $this->messageEnvelopeFactory = $messageEnvelopeFactory;
         $this->queueMessageRepository = $queueMessageRepository;
         $this->queueName = $queueName;
+        $this->logger = $logger;
     }
     
     /**
@@ -54,6 +58,7 @@ class MysqlBroker implements \Rcason\Mq\Api\BrokerInterface
     {
         $queueMessage = $this->queueMessageFactory->create()
             ->setQueueName($this->queueName)
+            ->setName($messageEnvelope->getName())
             ->setMessageContent($messageEnvelope->getContent());
         
         return $this->queueMessageRepository->create($queueMessage);
@@ -65,34 +70,30 @@ class MysqlBroker implements \Rcason\Mq\Api\BrokerInterface
     public function peek()
     {
         $queueMessage = $this->queueMessageRepository->peek();
-        if(!$queueMessage || !$queueMessage->getId()) {
+        if(!$queueMessage) {
             return false;
         }
-        
-        return $this->messageEnvelopeFactory->create()
-            ->setBrokerRef($queueMessage->getId())
-            ->setContent($queueMessage->getMessageContent());
+        return $queueMessage;
     }
     
     /**
      * {@inheritdoc}
      */
-    public function acknowledge(MessageEnvelopeInterface $message)
+    public function acknowledge(MessageEnvelopeInterface $queueMessage, $result)
     {
-        $message = $this->queueMessageRepository->get($message->getBrokerRef());
-        $this->queueMessageRepository->remove($message);
+        $message = $this->queueMessageRepository->get($queueMessage->getBrokerRef());
+        $this->queueMessageRepository->setDone($message, 'DONE: ' . $result);
     }
     
     /**
      * {@inheritdoc}
      */
-    public function reject(MessageEnvelopeInterface $message, $requeue = true)
+    public function reject(MessageEnvelopeInterface $queueMessage, $result)
     {
-        $message = $this->queueMessageRepository->get($message->getBrokerRef());
-        if($requeue) {
-            $this->queueMessageRepository->requeue($message);
-        } else {
-            $this->queueMessageRepository->remove($message);
-        }
+        $message = $this->queueMessageRepository->get($queueMessage->getBrokerRef());
+        $this->logger->info("Can't execute {$message->getEntityId()} message.");
+        $this->logger->critical($result);
+        $this->queueMessageRepository->setError($message, 'ERROR: ' . $result);
     }
+    
 }

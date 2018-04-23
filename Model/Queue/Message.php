@@ -14,12 +14,31 @@ class Message extends AbstractModel
      */
     protected $_eventPrefix = 'ce_queue_message';
     
+    private $statusOptions;
+    
     /**
      * @inheritdoc
      */
     protected function _construct()
     {
         $this->_init(ResourceModel::class);
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function getName()
+    {
+        return $this->getData(QueueMessageInterface::NAME);
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function setName($name)
+    {
+        $this->setData(QueueMessageInterface::NAME, $name);
+        return $this;
     }
     
     /**
@@ -123,4 +142,22 @@ class Message extends AbstractModel
         $this->setData(QueueMessageInterface::MESSAGE_BODY, $messageBody);
         return $this;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getResult()
+    {
+        return $this->getData(QueueMessageInterface::RESULT);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setResult($result)
+    {
+        $this->setData(QueueMessageInterface::RESULT, $result);
+        return $this;
+    }
+  
 }
