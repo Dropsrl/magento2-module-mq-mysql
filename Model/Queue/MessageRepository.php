@@ -73,11 +73,12 @@ class MessageRepository implements QueueMessageRepositoryInterface
     /**
      * @inheritdoc
      */
-    public function peek()
+    public function peek($queueName)
     {
         // Create collection instance and apply filter
         return $this->collectionFactory->create()
             ->addFieldToFilter('status', 0)
+            ->addFieldToFilter('queue_name', array('eq' => $queueName))
             ->setOrder('updated_at', 'ASC');
     }
     
