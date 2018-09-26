@@ -67,7 +67,7 @@ class MysqlBroker implements \Rcason\Mq\Api\BrokerInterface
     /**
      * {@inheritdoc}
      */
-    public function peek()
+    public function peek($queueMessage)
     {
         $queueMessage = $this->queueMessageRepository->peek();
         if(!$queueMessage) {
@@ -91,9 +91,9 @@ class MysqlBroker implements \Rcason\Mq\Api\BrokerInterface
     public function reject(MessageEnvelopeInterface $queueMessage, $result)
     {
         $message = $this->queueMessageRepository->get($queueMessage->getBrokerRef());
-        $this->logger->info("Can't execute {$message->getEntityId()} message.");
-        $this->logger->critical($result);
         $this->queueMessageRepository->setError($message, 'ERROR: ' . $result);
+//        $this->logger->info("Can't execute {$message->getEntityId()} message.");
+//        $this->logger->critical($result);
     }
     
 }

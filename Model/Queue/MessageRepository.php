@@ -73,7 +73,7 @@ class MessageRepository implements QueueMessageRepositoryInterface
     /**
      * @inheritdoc
      */
-    public function peek()
+    public function peek($queue)
     {
         // Create collection instance and apply filter
         return $this->collectionFactory->create()
@@ -148,9 +148,9 @@ class MessageRepository implements QueueMessageRepositoryInterface
     {
         $message->setStatus(QueueMessageInterface::STATUS_ERROR);
         $message->setResult($result);
-//        $message->setUpdatedAt($this->timezone->date()->format('Y-m-d H:i:s'));
         $message->setUpdatedAt($this->_date->gmtDate());
         $this->resourceModel->save($message);
+//        $message->setUpdatedAt($this->timezone->date()->format('Y-m-d H:i:s'));
     }
     
     /**

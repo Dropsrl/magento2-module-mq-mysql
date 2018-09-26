@@ -18,7 +18,7 @@ interface QueueMessageRepositoryInterface
      * 
      * @return \Rcason\MqMysql\Api\Data\QueueMessageInterface
      */
-    public function peek();
+    public function peek($queue);
     
     /**
      * Get message by id
