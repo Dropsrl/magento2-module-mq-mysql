@@ -69,7 +69,7 @@ class MysqlBroker implements \Rcason\Mq\Api\BrokerInterface
      */
     public function peek($queueMessage)
     {
-        $queueMessage = $this->queueMessageRepository->peek();
+        $queueMessage = $this->queueMessageRepository->peek($queueMessage);
         if(!$queueMessage) {
             return false;
         }
