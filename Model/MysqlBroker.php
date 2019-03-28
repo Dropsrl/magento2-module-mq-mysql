@@ -92,8 +92,6 @@ class MysqlBroker implements \Rcason\Mq\Api\BrokerInterface
     {
         $message = $this->queueMessageRepository->get($queueMessage->getBrokerRef());
         $this->queueMessageRepository->setError($message, 'ERROR: ' . $result);
-//        $this->logger->info("Can't execute {$message->getEntityId()} message.");
-//        $this->logger->critical($result);
     }
     
 }

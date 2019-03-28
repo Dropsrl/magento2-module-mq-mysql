@@ -24,11 +24,6 @@ class MessageRepository implements QueueMessageRepositoryInterface
      * @var CollectionFactory
      */
     protected $collectionFactory;
-    
-    /**
-     * @var int
-     */
-    protected $maxRetries;
 
     /**
      * @var \Magento\Framework\Stdlib\DateTime\DateTime
@@ -38,13 +33,19 @@ class MessageRepository implements QueueMessageRepositoryInterface
     /**
      * @var \Magento\Framework\Stdlib\DateTime\DateTime
      */
-    protected $timezone;    
-    
+    protected $timezone;
+    /**
+     * @var \Rcason\Mq\Helper\Data
+     */
+    private $helper;
+
     /**
      * @param QueueMessageInterfaceFactory $queueMessageFactory
      * @param ResourceModel $resourceModel
      * @param CollectionFactory $collectionFactory
-     * @param int $maxRetries
+     * @param \Magento\Framework\Stdlib\DateTime\DateTime $date
+     * @param \Magento\Framework\Stdlib\DateTime\TimezoneInterface $timezone
+     * @param \Rcason\Mq\Helper\Data $helper
      */
     public function __construct(
         QueueMessageInterfaceFactory $queueMessageFactory,
@@ -52,12 +53,12 @@ class MessageRepository implements QueueMessageRepositoryInterface
         CollectionFactory $collectionFactory,
         \Magento\Framework\Stdlib\DateTime\DateTime $date,
         \Magento\Framework\Stdlib\DateTime\TimezoneInterface $timezone,
-        $maxRetries = 5
+        \Rcason\Mq\Helper\Data $helper
     ) {
         $this->queueMessageFactory = $queueMessageFactory;
         $this->resourceModel = $resourceModel;
         $this->collectionFactory = $collectionFactory;
-        $this->maxRetries = $maxRetries;
+        $this->helper = $helper;
         $this->_date = $date;
         $this->timezone = $timezone;
     }
@@ -76,8 +77,11 @@ class MessageRepository implements QueueMessageRepositoryInterface
     public function peek($queue)
     {
         // Create collection instance and apply filter
+        $status = [QueueMessageInterface::STATUS_ERROR,QueueMessageInterface::STATUS_TO_PROCESS];
         return $this->collectionFactory->create()
-            ->addFieldToFilter('status', 0)
+            ->addFieldToFilter('status', ["in"=> $status])
+            ->addFieldToFilter('queue_name', $queue)
+            ->addFieldToFilter('retries', array('lt' => $this->helper->getMaxRetries()))
             ->setOrder('updated_at', 'ASC');
     }
     
@@ -136,7 +140,6 @@ class MessageRepository implements QueueMessageRepositoryInterface
     {
         $message->setStatus(QueueMessageInterface::STATUS_DONE);
         $message->setResult($result);
-//        $message->setUpdatedAt($this->timezone->date()->format('Y-m-d H:i:s'));
         $message->setUpdatedAt($this->_date->gmtDate());
         $this->resourceModel->save($message);
     }
@@ -149,8 +152,18 @@ class MessageRepository implements QueueMessageRepositoryInterface
         $message->setStatus(QueueMessageInterface::STATUS_ERROR);
         $message->setResult($result);
         $message->setUpdatedAt($this->_date->gmtDate());
+        $message->setRetries($message->getRetries()+1);
         $this->resourceModel->save($message);
-//        $message->setUpdatedAt($this->timezone->date()->format('Y-m-d H:i:s'));
+    }
+
+    /**
+     * @param QueueMessageInterface $message
+     * @param $retries
+     * @throws \Magento\Framework\Exception\AlreadyExistsException
+     */
+    public function setRetries( QueueMessageInterface $message){
+        $message->setRetries($message->getRetries()+1);
+        $this->resourceModel->save($message);
     }
     
     /**
